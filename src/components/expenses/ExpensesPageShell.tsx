@@ -90,6 +90,7 @@ export default function ExpensesPageShell({ expenses }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [deletePending, startDeleteTransition] = useTransition();
+  const [dateRange, setDateRange] = useState("all");
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -121,6 +122,34 @@ export default function ExpensesPageShell({ expenses }: Props) {
       next = next.filter((expense) => expense.category === category);
     }
 
+    if (dateRange !== "all") {
+      const now = new Date();
+
+      next = next.filter((expense) => {
+        const spentAt = new Date(expense.spentAt);
+
+        if (dateRange === "7d") {
+          const cutoff = new Date(now);
+          cutoff.setDate(now.getDate() - 7);
+          return spentAt >= cutoff;
+        }
+
+        if (dateRange === "30d") {
+          const cutoff = new Date(now);
+          cutoff.setDate(now.getDate() - 30);
+          return spentAt >= cutoff;
+        }
+
+        if (dateRange === "90d") {
+          const cutoff = new Date(now);
+          cutoff.setDate(now.getDate() - 90);
+          return spentAt >= cutoff;
+        }
+
+        return true;
+      });
+    }
+
     next.sort((a, b) => {
       if (sort === "newest") {
         return new Date(b.spentAt).getTime() - new Date(a.spentAt).getTime();
@@ -142,7 +171,7 @@ export default function ExpensesPageShell({ expenses }: Props) {
     });
 
     return next;
-  }, [expenses, search, category, sort]);
+  }, [expenses, search, category, dateRange, sort]);
 
   const totalVisible = filteredExpenses.reduce(
     (sum, expense) => sum + expense.amount,
@@ -226,7 +255,7 @@ export default function ExpensesPageShell({ expenses }: Props) {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[200px_180px]">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-auto xl:grid-cols-[200px_180px_160px]">
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
@@ -259,6 +288,25 @@ export default function ExpensesPageShell({ expenses }: Props) {
               </option>
               <option value="lowest" className="bg-slate-900 text-white">
                 Lowest Amount
+              </option>
+            </select>
+
+            <select
+              value={dateRange}
+              onChange={(event) => setDateRange(event.target.value)}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20"
+            >
+              <option value="all" className="bg-slate-900 text-white">
+                All Time
+              </option>
+              <option value="7d" className="bg-slate-900 text-white">
+                Last 7 Days
+              </option>
+              <option value="30d" className="bg-slate-900 text-white">
+                Last 30 Days
+              </option>
+              <option value="90d" className="bg-slate-900 text-white">
+                Last 90 Days
               </option>
             </select>
           </div>
@@ -341,6 +389,7 @@ export default function ExpensesPageShell({ expenses }: Props) {
                   setSearch("");
                   setCategory("All Categories");
                   setSort("newest");
+                  setDateRange("all");
                 }}
                 className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
               >

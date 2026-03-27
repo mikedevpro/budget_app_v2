@@ -8,6 +8,7 @@ type Props = {
   open: boolean;
   onClose: () => void;
   initialValue: number;
+  initialPeriod?: "weekly" | "monthly" | "yearly";
   onSuccess?: () => void;
 };
 
@@ -20,6 +21,7 @@ export default function EditBudgetModal({
   open,
   onClose,
   initialValue,
+  initialPeriod = "monthly",
   onSuccess,
 }: Props) {
   const [state, formAction, pending] = useActionState(
@@ -27,10 +29,12 @@ export default function EditBudgetModal({
     initialState
   );
   const [monthlyLimit, setMonthlyLimit] = useState(String(initialValue));
+  const [period, setPeriod] = useState(initialPeriod);
 
   useEffect(() => {
     setMonthlyLimit(String(initialValue));
-  }, [initialValue, open]);
+    setPeriod(initialPeriod);
+  }, [initialValue, initialPeriod, open]);
 
   useEffect(() => {
     if (state.success) {
@@ -86,6 +90,34 @@ export default function EditBudgetModal({
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20"
               required
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="budget-period"
+              className="mb-2 block text-sm font-medium text-slate-200"
+            >
+              Budget period
+            </label>
+            <select
+              id="budget-period"
+              name="period"
+              value={period}
+              onChange={(e) =>
+                setPeriod(e.target.value as "weekly" | "monthly" | "yearly")
+              }
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20"
+            >
+              <option value="weekly" className="bg-slate-900 text-white">
+                Weekly
+              </option>
+              <option value="monthly" className="bg-slate-900 text-white">
+                Monthly
+              </option>
+              <option value="yearly" className="bg-slate-900 text-white">
+                Yearly
+              </option>
+            </select>
           </div>
 
           {state.error ? (

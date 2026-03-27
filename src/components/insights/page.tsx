@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import AppTopNav from "@/components/layout/AppTopNav";
 import InsightsPageShell from "@/components/insights/InsightsPageShell";
 import { createClient } from "@/lib/supabase/server";
+import { formatBudgetPeriodLabel } from "@/lib/utils/dateRanges";
 
 function formatShortLabel(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -20,6 +21,43 @@ export default async function InsightsPage() {
   if (!user) {
     redirect("/login");
   }
+
+  let budgetRow: { monthly_limit?: number | string | null; period?: string | null } | null =
+    null;
+
+  const { data: budgetWithPeriod, error: budgetWithPeriodError } = await supabase
+    .from("budgets")
+    .select("monthly_limit, period")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (budgetWithPeriodError) {
+    const message = String(budgetWithPeriodError.message ?? "").toLowerCase();
+    if (message.includes("column") && message.includes("period")) {
+      const { data: budgetWithoutPeriod } = await supabase
+        .from("budgets")
+        .select("monthly_limit")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      budgetRow = budgetWithoutPeriod;
+    } else {
+      console.error("Failed to load budget:", budgetWithPeriodError);
+    }
+  } else {
+    budgetRow = budgetWithPeriod;
+  }
+
+  const budgetAmount = budgetRow?.monthly_limit
+    ? Number(budgetRow.monthly_limit)
+    : 2000;
+  const budgetPeriod =
+    budgetRow?.period === "weekly" ||
+    budgetRow?.period === "monthly" ||
+    budgetRow?.period === "yearly"
+      ? budgetRow.period
+      : "monthly";
 
   const { data, error } = await supabase
     .from("expenses")
@@ -78,6 +116,10 @@ export default async function InsightsPage() {
         averageExpense={averageExpense}
         expenseCount={expenses.length}
         topCategory={topCategory}
+        budgetAmount={budgetAmount}
+        budgetPeriod={budgetPeriod}
+        periodLabel={formatBudgetPeriodLabel(budgetPeriod)}
+        selectedRange="period"
       />
     </>
   );

@@ -173,14 +173,20 @@ export default function DashboardShell({
   chartData,
   trendData,
   userEmail,
-  monthlyBudget,
+  budgetAmount,
+  budgetPeriod,
+  periodLabel,
+  selectedRange,
 }: {
   summaryCards: SummaryCardData[];
   transactions: Transaction[];
   chartData: { name: string; value: number }[];
   trendData: { date: string; total: number }[];
   userEmail: string | null;
-  monthlyBudget: number;
+  budgetAmount: number;
+  budgetPeriod: "weekly" | "monthly" | "yearly";
+  periodLabel: string;
+  selectedRange: "period" | "7d" | "30d" | "90d" | "all";
 }) {
   const [open, setOpen] = useState(false);
   const [budgetOpen, setBudgetOpen] = useState(false);
@@ -216,8 +222,9 @@ export default function DashboardShell({
                   Snapshot
                 </p>
                 <p className="mt-1 font-medium text-white">
-                  Budget {formatMoney(monthlyBudget)}
+                  Budget {formatMoney(budgetAmount)}
                 </p>
+                <p className="mt-1 font-medium text-white">{periodLabel}</p>
               </div>
 
               <div className="flex gap-3">
@@ -284,7 +291,7 @@ export default function DashboardShell({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-[180px_180px]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:w-auto xl:grid-cols-[180px_180px_180px]">
               <select className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20">
                 <option className="bg-slate-900 text-white">All Categories</option>
                 <option className="bg-slate-900 text-white">Food</option>
@@ -297,6 +304,30 @@ export default function DashboardShell({
                 <option className="bg-slate-900 text-white">Oldest First</option>
                 <option className="bg-slate-900 text-white">Highest Amount</option>
                 <option className="bg-slate-900 text-white">Lowest Amount</option>
+              </select>
+
+              <select
+                value={selectedRange}
+                onChange={(event) => {
+                  window.location.href = `/dashboard?range=${event.target.value}`;
+                }}
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/60 focus:ring-2 focus:ring-emerald-400/20"
+              >
+                <option value="period" className="bg-slate-900 text-white">
+                  Budget Period
+                </option>
+                <option value="7d" className="bg-slate-900 text-white">
+                  Last 7 Days
+                </option>
+                <option value="30d" className="bg-slate-900 text-white">
+                  Last 30 Days
+                </option>
+                <option value="90d" className="bg-slate-900 text-white">
+                  Last 90 Days
+                </option>
+                <option value="all" className="bg-slate-900 text-white">
+                  All Time
+                </option>
               </select>
             </div>
           </div>
@@ -313,7 +344,7 @@ export default function DashboardShell({
               <SpendingByCategoryChart data={chartData} />
             </SectionCard>
 
-            <SectionCard eyebrow="Trends" title="Monthly Spending Trend">
+            <SectionCard eyebrow="Trends" title={`${periodLabel} Spending Trend`}>
               <MonthlyTrendChart data={trendData} />
             </SectionCard>
           </div>
@@ -328,7 +359,8 @@ export default function DashboardShell({
       <EditBudgetModal
         open={budgetOpen}
         onClose={() => setBudgetOpen(false)}
-        initialValue={monthlyBudget}
+        initialValue={budgetAmount}
+        initialPeriod={budgetPeriod}
         onSuccess={() => setToastMessage("Monthly budget updated successfully.")}
       />
       <Toast
