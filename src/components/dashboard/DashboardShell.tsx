@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
+import { Edit, Pencil, Trash2 } from "lucide-react";
 import AddExpenseModal from "@/components/dashboard/AddExpenseModal";
 import SpendingByCategoryChart from "@/components/charts/SpendingByCategoryChart";
 import MonthlyTrendChart from "@/components/charts/MonthlyTrendChart";
@@ -10,8 +10,12 @@ import Toast from "@/components/ui/Toast";
 import AppTopNav from "@/components/layout/AppTopNav";
 import { deleteExpense } from "@/app/expenses/actions";
 import CategoryBadge from "@/components/ui/CategoryBadge";
+import SectionCard from "@/components/ui/SectionCard";
 import StatsCard from "@/components/ui/StatsCard";
 import { DollarSign, FolderOpen, Target, Wallet } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import { exportExpensesToCsv } from "@/lib/utils/exportExpensesToCsv";
+import EditBudgetModal from "@/components/dashboard/EditBudgetModal";
 
 type SummaryCardData = {
   label: string;
@@ -28,35 +32,6 @@ type Transaction = {
   amount: number;
   spentAt: string;
 };
-
-function SectionCard({
-  eyebrow,
-  title,
-  children,
-  action,
-}: {
-  eyebrow: string;
-  title: string;
-  children: React.ReactNode;
-  action?: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 shadow-[0_0_24px_rgba(15,23,42,0.28)] backdrop-blur-sm sm:p-6">
-      <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-            {eyebrow}
-          </p>
-          <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
-            {title}
-          </h2>
-        </div>
-        {action ? <div>{action}</div> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -128,8 +103,10 @@ function EditExpenseButton({
 
 function RecentTransactionsCard({
   transactions,
+  onDeleteSuccess,
 }: {
   transactions: Transaction[];
+  onDeleteSuccess?: () => void;
 }) {
   return (
     <SectionCard
@@ -169,7 +146,10 @@ function RecentTransactionsCard({
                 </p>
                 <div className="mt-2 flex justify-end gap-2">
                   <EditExpenseButton onClick={() => undefined} />
-                  <DeleteExpenseButton expenseId={transaction.id} />
+                  <DeleteExpenseButton
+                    expenseId={transaction.id}
+                    onSuccess={onDeleteSuccess}
+                  />
                 </div>
               </div>
             </div>
@@ -193,28 +173,31 @@ export default function DashboardShell({
   chartData,
   trendData,
   userEmail,
+  monthlyBudget,
 }: {
   summaryCards: SummaryCardData[];
   transactions: Transaction[];
   chartData: { name: string; value: number }[];
   trendData: { date: string; total: number }[];
   userEmail: string | null;
+  monthlyBudget: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
-    if (!showToast) return;
+    if (!toastMessage) return;
 
     const timeout = window.setTimeout(() => {
-      setShowToast(false);
+      setToastMessage("");
     }, 2500);
 
     return () => window.clearTimeout(timeout);
-  }, [showToast]);
+  }, [toastMessage]);
 
   function handleExpenseAdded() {
-    setShowToast(true);
+    setToastMessage("Expense added successfully.");
   }
 
   return (
@@ -222,29 +205,19 @@ export default function DashboardShell({
       <AppTopNav email={userEmail} />
 
       <main className="space-y-6 sm:space-y-8">
-        <section className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 shadow-[0_0_40px_rgba(16,185,129,0.08)] backdrop-blur-sm sm:rounded-[2rem] sm:p-8 sm:shadow-[0_0_60px_rgba(16,185,129,0.08)]">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl space-y-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-400 sm:text-sm sm:tracking-[0.25em]">
-                Personal finance dashboard
-              </p>
-
-              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-5xl sm:leading-tight">
-                Budget Dashboard
-              </h1>
-
-              <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-                Track spending, monitor trends, and stay in control with a calmer,
-                more polished financial dashboard built for clarity.
-              </p>
-            </div>
-
+        <PageHeader
+          eyebrow="Personal finance dashboard"
+          title="Budget Dashboard"
+          description="Track spending, monitor trends, and stay in control with a calmer, more polished financial dashboard built for clarity."
+          aside={
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-col lg:items-end">
               <div className="rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-sm text-slate-300">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
                   Snapshot
                 </p>
-                <p className="mt-1 font-medium text-white">This month</p>
+                <p className="mt-1 font-medium text-white">
+                  Budget {formatMoney(monthlyBudget)}
+                </p>
               </div>
 
               <div className="flex gap-3">
@@ -258,14 +231,23 @@ export default function DashboardShell({
 
                 <button
                   type="button"
+                  onClick={() => setBudgetOpen(true)}
+                  className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
+                >
+                  Edit Budget
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => exportExpensesToCsv(transactions, "budget-dashboard-expenses.csv")}
                   className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
                 >
                   Export CSV
                 </button>
               </div>
             </div>
-          </div>
-        </section>
+          }
+        />
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {summaryCards.map((card) => {
@@ -321,7 +303,10 @@ export default function DashboardShell({
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
-          <RecentTransactionsCard transactions={transactions} />
+          <RecentTransactionsCard
+            transactions={transactions}
+            onDeleteSuccess={() => setToastMessage("Expense deleted successfully.")}
+          />
 
           <div className="space-y-6">
             <SectionCard eyebrow="Insights" title="Spending by Category">
@@ -340,9 +325,14 @@ export default function DashboardShell({
         onClose={() => setOpen(false)}
         onSuccess={handleExpenseAdded}
       />
+      <EditBudgetModal
+        open={budgetOpen}
+        onClose={() => setBudgetOpen(false)}
+        initialValue={monthlyBudget}
+        onSuccess={() => setToastMessage("Monthly budget updated successfully.")}
+      />
       <Toast
-        visible={showToast}
-        message="Expense added successfully."
+        visible={!!toastMessage} message={toastMessage}
       />
     </>
   );

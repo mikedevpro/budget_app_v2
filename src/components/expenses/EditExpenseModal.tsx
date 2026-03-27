@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { updateExpense } from "@/app/expenses/actions";
 import { getCategoryOptions } from "@/lib/utils/categories";
+import ErrorState from "@/components/ui/ErrorState";
 
 type Expense = {
   id: string;
@@ -163,9 +164,10 @@ export default function EditExpenseModal({
           </div>
 
           {state.error ? (
-            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-200">
-              {state.error}
-            </div>
+            <ErrorState
+              title="Unable to update expense"
+              message={state.error}
+            />
           ) : null}
 
           <div className="flex items-center justify-end gap-3 pt-2">

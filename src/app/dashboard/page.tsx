@@ -27,6 +27,16 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const { data: budgetRow } = await supabase
+  .from("budgets")
+  .select("monthly_limit")
+  .eq("user_id", user.id)
+  .maybeSingle();
+
+  const monthlyBudget = budgetRow?.monthly_limit
+    ? Number(budgetRow.monthly_limit)
+    : 2000;
+
   const userEmail = user.email ?? null;
 
   const { data } = await supabase
@@ -45,7 +55,7 @@ export default async function DashboardPage() {
     })) ?? [];
 
   const totalSpent = transactions.reduce((sum, item) => sum + item.amount, 0);
-  const monthlyBudget = 2000;
+  // const monthlyBudget = 2000;
   const remaining = monthlyBudget - totalSpent;
 
   const categoryTotals = transactions.reduce<Record<string, number>>(
@@ -109,6 +119,7 @@ export default async function DashboardPage() {
       chartData={chartData}
       trendData={trendData}
       userEmail={userEmail}
+      monthlyBudget={monthlyBudget}
     />
   );
 }

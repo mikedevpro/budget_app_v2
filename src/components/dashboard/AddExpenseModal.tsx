@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { addExpense } from "@/app/dashboard/actions";
 import { getCategoryOptions } from "@/lib/utils/categories";
+import ErrorState from "@/components/ui/ErrorState";
 
 type AddExpenseModalProps = {
   open: boolean;
@@ -165,9 +166,10 @@ export default function AddExpenseModal({
           </div>
 
           {state.error ? (
-            <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-200">
-              {state.error}
-            </div>
+            <ErrorState
+              title="Unable to save expense"
+              message={state.error}
+            />
           ) : null}
 
           <div className="flex items-center justify-end gap-3 pt-2">
