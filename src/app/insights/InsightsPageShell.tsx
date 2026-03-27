@@ -10,6 +10,7 @@ import SectionCard from "@/components/ui/SectionCard";
 import StatsCard from "@/components/ui/StatsCard";
 import Toast from "@/components/ui/Toast";
 import type { BudgetPeriod, RelativeRange } from "@/lib/utils/dateRanges";
+import { formatMoney } from "@/lib/utils/formatters";
 
 type Props = {
   chartData: { name: string; value: number }[];
@@ -23,13 +24,6 @@ type Props = {
   periodLabel: string;
   selectedRange: RelativeRange;
 };
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
 
 export default function InsightsPageShell({
   chartData,

@@ -16,6 +16,7 @@ import { DollarSign, FolderOpen, Target, Wallet } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { exportExpensesToCsv } from "@/lib/utils/exportExpensesToCsv";
 import EditBudgetModal from "@/components/dashboard/EditBudgetModal";
+import { formatMoney, formatShortDate } from "@/lib/utils/formatters";
 
 type SummaryCardData = {
   label: string;
@@ -32,20 +33,6 @@ type Transaction = {
   amount: number;
   spentAt: string;
 };
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
-
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
-}
 
 function DeleteExpenseButton({
   expenseId,

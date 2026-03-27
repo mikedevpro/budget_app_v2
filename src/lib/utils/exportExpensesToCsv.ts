@@ -1,3 +1,5 @@
+import { formatIsoDate } from "@/lib/utils/formatters";
+
 type Expense = {
   id: string;
   name: string;
@@ -22,7 +24,7 @@ export function exportExpensesToCsv(
     escapeCsvValue(expense.name),
     escapeCsvValue(expense.category),
     escapeCsvValue(expense.amount.toFixed(2)),
-    escapeCsvValue(new Date(expense.spentAt).toISOString().slice(0, 10)),
+    escapeCsvValue(formatIsoDate(expense.spentAt)),
   ]);
 
   const csvContent = [headers.map(escapeCsvValue), ...rows]

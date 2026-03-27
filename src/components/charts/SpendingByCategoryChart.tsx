@@ -9,6 +9,7 @@ import {
 } from "recharts";
 
 import { getCategoryChartColor, getCategoryConfig } from "@/lib/utils/categories";
+import { formatMoney } from "@/lib/utils/formatters";
 
 type ChartDatum = {
   name: string;
@@ -18,13 +19,6 @@ type ChartDatum = {
 type Props = {
   data: ChartDatum[];
 };
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
 
 export default function SpendingByCategoryChart({ data }: Props) {
   const total = data.reduce((sum, item) => sum + item.value, 0);

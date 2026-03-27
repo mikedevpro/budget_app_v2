@@ -12,6 +12,7 @@ import CategoryBadge from "@/components/ui/CategoryBadge";
 import PageHeader from "@/components/ui/PageHeader";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { exportExpensesToCsv } from "@/lib/utils/exportExpensesToCsv";
+import { formatLongDate, formatMoney } from "@/lib/utils/formatters";
 
 type Expense = {
   id: string;
@@ -24,21 +25,6 @@ type Expense = {
 type Props = {
   expenses: Expense[];
 };
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
 
 function EditExpenseButton({
   onClick,
@@ -350,7 +336,7 @@ export default function ExpensesPageShell({ expenses }: Props) {
                       <CategoryBadge category={expense.category} />
                     </td>
                     <td className="px-4 py-4 text-sm text-slate-300">
-                      {formatDate(expense.spentAt)}
+                      {formatLongDate(expense.spentAt)}
                     </td>
                     <td className="px-4 py-4 text-right text-sm font-semibold text-rose-400">
                       -{formatMoney(expense.amount)}

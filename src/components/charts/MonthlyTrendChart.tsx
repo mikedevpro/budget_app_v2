@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import { formatMoneyCompact } from "@/lib/utils/formatters";
 
 type TrendDatum = {
   date: string;
@@ -18,14 +19,6 @@ type TrendDatum = {
 type Props = {
   data: TrendDatum[];
 };
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 export default function MonthlyTrendChart({ data }: Props) {
   if (!data.length) {
@@ -55,7 +48,9 @@ export default function MonthlyTrendChart({ data }: Props) {
             width={48}
           />
           <Tooltip
-            formatter={(value) => [formatMoney(Number(value ?? 0)), "Spent"]}
+            formatter={(
+              value: number | string | readonly (number | string)[] | undefined
+            ) => [formatMoneyCompact(Number(Array.isArray(value) ? value[0] : value ?? 0)), "Spent"]}
             contentStyle={{
               background: "#020617",
               border: "1px solid rgba(255,255,255,0.1)",
